@@ -97,7 +97,10 @@ function Payments() {
     return { total, byMethod, count: rows.length };
   }, [payments.data]);
 
-  const owed = (outstanding.data ?? []).reduce((sum, s) => sum + (s.amount_due_minor ?? 0), 0);
+  const owed = (outstanding.data ?? []).reduce(
+    (sum, s) => sum + (s.amount_due_minor - (s.amount_paid_minor ?? 0)),
+    0,
+  );
 
   return (
     <AppShell>
