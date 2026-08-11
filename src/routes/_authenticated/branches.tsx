@@ -117,9 +117,9 @@ function Branches() {
       reason: string | null;
     }) => {
       const { error } = await supabase.rpc("set_branch_pause", {
-        p_branch_id: branchId,
-        p_paused: paused,
-        p_reason: reason,
+        _branch_id: branchId,
+        _paused: paused,
+        ...(reason ? { _reason: reason } : {}),
       });
       if (error) throw error;
     },
