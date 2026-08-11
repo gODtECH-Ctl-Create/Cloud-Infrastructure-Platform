@@ -74,14 +74,15 @@ function Payments() {
         .from("sessions")
         .select("*, branches(name), customers(customer_code, full_name)")
         .eq("status", "completed")
-        .eq("is_paid", false)
         .gt("amount_due_minor", 0)
         .order("ended_at", { ascending: false })
-        .limit(100);
+        .limit(200);
       if (scope === "branch" && activeBranchId) q = q.eq("branch_id", activeBranchId);
       const { data, error } = await q;
       if (error) throw error;
-      return data;
+      // Unpaid = collected less than billed. Compared client-side because the
+      // Data API can't filter one column against another.
+      return (data ?? []).filter((s) => (s.amount_paid_minor ?? 0) < s.amount_due_minor);
     },
   });
 
