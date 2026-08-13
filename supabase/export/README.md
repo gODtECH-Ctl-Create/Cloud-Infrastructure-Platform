@@ -70,3 +70,20 @@ The publishable/anon key is safe to expose. The service-role key is server-only 
 ## Verification status
 
 The export was diffed against the live migration history: tables, functions, policies and triggers all match one-for-one, and no key, password, or project identifier appears in any exported file.
+
+## Handoff: target project
+
+Your own Supabase project (the destination for this export):
+
+- URL: `https://ojeeefrxliuokkkiqcle.supabase.co`
+- Publishable (anon) key: `sb_publishable_9_6ptYowmoATs7l3BR0isg_WpYLicK6`
+- Service-role key: not recorded here — set it only as a server-side environment variable in the hosting project.
+
+### Steps in order
+
+1. In this project's Supabase SQL Editor, run `01` → `02` → `03` → `04`.
+2. Apply the Auth settings above (site URL, redirect URLs, email confirmation on, anonymous off, Google provider).
+3. Create a new Lovable project and connect it to your own Supabase account, selecting this project. Import this repository's `src/` (GitHub sync on the new project), so no application code is rewritten.
+4. In the new project, confirm the environment variables resolve to the URL and publishable key above, and add `SUPABASE_SERVICE_ROLE_KEY` server-side.
+5. Sign up the owner account, then claim the first admin role as described above.
+6. Smoke test in this order: sign in → create a branch → register a customer (expect `WTW-000001`) → start, pause, resume and end a session → record a payment → toggle a branch power-outage pause.
