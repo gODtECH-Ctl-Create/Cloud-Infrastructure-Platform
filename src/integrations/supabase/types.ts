@@ -227,10 +227,13 @@ export type Database = {
         Row: {
           amount_minor: number
           branch_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           currency: string
           customer_id: string
           id: string
+          idempotency_key: string | null
           method: string
           notes: string | null
           paid_at: string
@@ -242,14 +245,19 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status"]
           subscription_id: string | null
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
         }
         Insert: {
           amount_minor: number
           branch_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           currency?: string
           customer_id: string
           id?: string
+          idempotency_key?: string | null
           method?: string
           notes?: string | null
           paid_at?: string
@@ -261,14 +269,19 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"]
           subscription_id?: string | null
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Update: {
           amount_minor?: number
           branch_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           currency?: string
           customer_id?: string
           id?: string
+          idempotency_key?: string | null
           method?: string
           notes?: string | null
           paid_at?: string
@@ -280,6 +293,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"]
           subscription_id?: string | null
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -515,6 +530,41 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "customer_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_branch_access: {
+        Row: {
+          branch_id: string
+          created_at: string
+          granted_by: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_branch_access_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]
@@ -756,6 +806,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_staff: {
+        Args: never
+        Returns: {
+          branch_ids: string[]
+          created_at: string
+          email: string
+          full_name: string
+          is_active: boolean
+          phone: string
+          roles: string[]
+          user_id: string
+        }[]
+      }
+      admin_set_branch_access: {
+        Args: { _allowed: boolean; _branch_id: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_set_staff_active: {
+        Args: { _is_active: boolean; _user_id: string }
+        Returns: undefined
+      }
+      admin_set_staff_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       claim_first_admin: { Args: never; Returns: boolean }
       end_session: {
         Args: { _notes?: string; _session_id: string }
@@ -847,6 +925,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      has_branch_access: {
+        Args: { _branch_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -854,6 +936,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       pause_session: {
@@ -891,6 +974,89 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      purchase_subscription: {
+        Args: {
+          _branch_id: string
+          _customer_id: string
+          _idempotency_key: string
+          _method: string
+          _notes?: string
+          _plan_id: string
+          _reference?: string
+          _status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Returns: {
+          amount_minor: number
+          branch_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          idempotency_key: string | null
+          method: string
+          notes: string | null
+          paid_at: string
+          provider: string | null
+          provider_reference: string | null
+          recorded_by: string | null
+          reference: string | null
+          session_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_session_payment: {
+        Args: {
+          _amount_minor?: number
+          _idempotency_key: string
+          _method: string
+          _notes?: string
+          _reference?: string
+          _session_id: string
+          _status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Returns: {
+          amount_minor: number
+          branch_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          idempotency_key: string | null
+          method: string
+          notes: string | null
+          paid_at: string
+          provider: string | null
+          provider_reference: string | null
+          recorded_by: string | null
+          reference: string | null
+          session_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -941,10 +1107,62 @@ export type Database = {
         Args: { _branch_id: string; _paused: boolean; _reason?: string }
         Returns: undefined
       }
+      set_customer_active: {
+        Args: { _customer_id: string; _is_active: boolean }
+        Returns: {
+          address: string | null
+          category: Database["public"]["Enums"]["customer_category"]
+          created_at: string
+          created_by: string | null
+          customer_code: string
+          email: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          phone: string | null
+          qr_token: string
+          registered_branch_id: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_global_pause: {
         Args: { _paused: boolean; _reason?: string }
         Returns: undefined
       }
+      set_subscription_status: {
+        Args: {
+          _reason?: string
+          _status: Database["public"]["Enums"]["subscription_status"]
+          _subscription_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          ends_on: string | null
+          id: string
+          plan_id: string
+          sold_at_branch_id: string | null
+          started_on: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          week_start_dow: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      staff_is_active: { Args: { _user_id: string }; Returns: boolean }
       start_session: {
         Args: {
           _authorized_user_id?: string
@@ -985,13 +1203,55 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_payment_status: {
+        Args: {
+          _payment_id: string
+          _reason?: string
+          _status: Database["public"]["Enums"]["payment_status"]
+        }
+        Returns: {
+          amount_minor: number
+          branch_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          idempotency_key: string | null
+          method: string
+          notes: string | null
+          paid_at: string
+          provider: string | null
+          provider_reference: string | null
+          recorded_by: string | null
+          reference: string | null
+          session_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "attendant"
       billing_mode: "subscription" | "walk_in"
       customer_category: "subscriber" | "walk_in"
       pause_scope: "session" | "branch" | "system"
-      payment_status: "pending" | "confirmed" | "failed" | "refunded"
+      payment_status:
+        | "pending"
+        | "confirmed"
+        | "failed"
+        | "refunded"
+        | "cancelled"
       session_status: "active" | "paused" | "completed" | "cancelled"
       subscription_status: "active" | "paused" | "expired" | "cancelled"
     }
@@ -1125,7 +1385,13 @@ export const Constants = {
       billing_mode: ["subscription", "walk_in"],
       customer_category: ["subscriber", "walk_in"],
       pause_scope: ["session", "branch", "system"],
-      payment_status: ["pending", "confirmed", "failed", "refunded"],
+      payment_status: [
+        "pending",
+        "confirmed",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
       session_status: ["active", "paused", "completed", "cancelled"],
       subscription_status: ["active", "paused", "expired", "cancelled"],
     },
