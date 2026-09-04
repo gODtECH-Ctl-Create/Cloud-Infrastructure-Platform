@@ -2,109 +2,137 @@
 
 ## Objective
 
-Prove that we can operate a small real cloud resource lifecycle from an Application Programming Interface (API) and a simple web console.
+Prove one thing:
 
-## Minimum viable product scope
+> We can use software to control a real virtual machine as a cloud resource.
 
-### Account layer
+This is a laboratory proof of concept, not a production cloud.
 
-- user registration and login
-- organization/workspace
-- project
-- role-based access
-- API key creation and revocation
+## Minimum viable product
 
-### Compute
+The first version has only four parts.
 
-- virtual machine image selection
-- name
-- virtual CPU count
-- memory allocation
-- disk allocation
+### 1. Local control service
+
+A lightweight service that stores the identity and desired state of one virtual machine.
+
+### 2. Infrastructure adapter
+
+A small adapter that talks to the local virtualization layer and translates cloud actions into actual machine actions.
+
+### 3. One virtual machine
+
+A small Linux virtual machine with Secure Shell (SSH) access and a simple test application.
+
+### 4. Tiny operator interface
+
+A simple web page or command-line interface (CLI) that can:
+
+- create
+- inspect
 - start
 - stop
 - restart
 - delete
-- status
-- basic console or Secure Shell (SSH) connection information
 
-### Network
+The first interface does not need customer accounts, polished design, payments, or a large dashboard.
 
-- private lab network
-- virtual network interface
-- internal address
-- controlled public or port-forwarded access for lab testing
-- basic firewall rules
+## Core resource model
 
-### Storage
+At minimum, store:
 
-- persistent virtual disk
-- snapshot concept
-- storage capacity tracking
+```text
+server_id
+name
+provider_type
+status
+desired_state
+cpu
+memory_mb
+disk_gb
+network_address
+created_at
+updated_at
+```
 
-### Control plane
+The database can initially be a local SQLite database. We can move to PostgreSQL when the control plane becomes multi-user or production-oriented.
 
-- resource database
-- desired state
-- actual state
-- provisioning job
-- job history
-- error state
-- audit event
+## Example API
 
-### Dashboard
+```text
+POST   /servers
+GET    /servers
+GET    /servers/:id
+POST   /servers/:id/start
+POST   /servers/:id/stop
+POST   /servers/:id/restart
+DELETE /servers/:id
+```
 
-- resources page
-- resource detail
-- create resource form
-- status indicators
-- basic utilization metrics
+## End-to-end demonstration
 
-### Billing foundation
+The proof of concept succeeds when this sequence works:
 
-Do not implement a full payment gateway first. Start by recording billable resource definitions and simulated usage.
+```text
+Operator
+   |
+   v
+Create server
+   |
+   v
+Control service
+   |
+   v
+Virtualization adapter
+   |
+   v
+Real Linux VM created
+   |
+   v
+IP / local address returned
+   |
+   v
+SSH connection works
+   |
+   v
+Test application responds
+   |
+   v
+Start / stop / restart works
+   |
+   v
+Delete request removes the VM
+```
 
-Example:
+## Success criteria
 
-`4 vCPU + 8 GB RAM + 100 GB disk + bandwidth` -> usage record -> estimated cost.
-
-Actual payment collection can follow after the provisioning and accounting model is reliable.
-
-## Example API surface
-
-`POST /v1/projects`
-
-`POST /v1/servers`
-
-`GET /v1/servers`
-
-`GET /v1/servers/:id`
-
-`POST /v1/servers/:id/start`
-
-`POST /v1/servers/:id/stop`
-
-`POST /v1/servers/:id/restart`
-
-`DELETE /v1/servers/:id`
-
-`GET /v1/usage`
-
-The exact API design will be refined during the Technical Requirements Document phase.
-
-## Definition of done for the first end-to-end demo
-
-A test user can log in, create a project, request a server, the control plane validates the request, an infrastructure adapter creates a real virtual machine, the dashboard reports its real state, the user can connect to the machine, and deleting the resource actually removes it.
-
-The demo must survive a restart of the control-plane application without losing the resource record.
+1. No fake status is allowed. The reported machine state must come from the actual virtualization layer.
+2. Deleting a resource must actually delete the virtual machine.
+3. Restarting the control service must not erase the resource record.
+4. The operator can repeat the lifecycle without manually opening the hypervisor interface for each action.
+5. The experiment can run on an 8 GB RAM, 256 GB storage, Core i5 laptop with a deliberately small footprint.
 
 ## Explicitly deferred
 
-- multi-region scheduling
-- automated autoscaling
+- user authentication
+- organizations and teams
+- billing
+- public customer traffic
+- multiple physical nodes
+- Kubernetes
+- distributed storage
+- load balancers
+- virtual private cloud networking
+- autoscaling
 - managed databases
 - object storage
-- serverless functions
-- artificial intelligence or Graphics Processing Unit (GPU) compute
-- advanced load balancing
-- public Internet-facing customer production workloads
+- serverless computing
+- Graphics Processing Unit (GPU) infrastructure
+- multi-region deployment
+- high availability
+
+## Next phase
+
+After this lifecycle is proven, the next step is not immediately "build more features."
+
+The next step is to move the same control model from the laptop to a small dedicated server and prove that the architecture survives on real always-on hardware.
