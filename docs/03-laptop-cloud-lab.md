@@ -1,92 +1,146 @@
 # 03 Laptop Cloud Lab
 
-## The answer to the core question
+## Purpose
 
-Yes. For the first miniature version, the laptop can act as the physical hardware underneath the cloud laboratory.
+The first goal is not to build a production cloud. It is to prove the central idea with the smallest useful experiment.
 
-What makes it a cloud experiment is not the laptop itself. The cloud behavior comes from the software stack that virtualizes resources, creates isolated workloads, manages networking and storage, exposes an API, and tracks state.
+We can do that on a modest laptop.
 
-The laptop is therefore the **host machine**. The virtual machines and services running on it form the first laboratory cluster.
+## Current lab hardware target
 
-## Example
+Assume the starting machine is approximately:
 
-One laptop might have:
+- Intel Core i5 processor
+- 8 GB RAM
+- 256 GB local storage
 
-- 8 to 16 CPU cores
-- 16 to 64 gigabytes of RAM
-- 512 gigabytes to 2 terabytes of Solid-State Drive (SSD) storage
-- wired or wireless Internet access
+We should deliberately use only a small portion of those resources.
 
-Inside it we could create:
+The laptop is a **single development host**, not production infrastructure.
 
-- control-plane virtual machine
-- compute node 1
-- compute node 2
-- storage or observability node
+## Minimum topology
 
-The exact numbers depend on the laptop. We should measure the actual hardware before selecting the lab topology.
-
-## Example topology
-
+```text
 Laptop
+  |
+  +-- Host operating system
+  |
+  +-- Hypervisor / virtualization layer
+          |
+          +-- One Linux virtual machine
+                  |
+                  +-- Test application
+                  +-- SSH access
+```
 
--> Hypervisor
+The cloud control plane can initially run directly on the host or in a very lightweight container. We do not need multiple virtual machines yet.
 
--> vm-control-plane
+## Suggested resource budget
 
--> vm-compute-01
+The exact allocation depends on the host operating system, but the principle is:
 
--> vm-compute-02
+- keep several gigabytes of RAM available to the host
+- give the test virtual machine only what it needs
+- keep substantial free disk space for the host
+- avoid large snapshots, databases, Kubernetes clusters, or multiple operating-system images
 
--> vm-monitoring
+For an 8 GB machine, a single small Linux virtual machine is enough for the proof of concept.
 
-A more constrained laptop can combine roles. The purpose is learning, not high availability.
+## What we are proving
 
-## Recommended host approach
+The lab only needs to demonstrate this sequence:
 
-A Linux laptop is the cleanest target for the first serious lab because Linux offers direct access to Kernel-based Virtual Machine (KVM) virtualization and standard networking tools.
+```text
+Create request
+     |
+     v
+Control plane
+     |
+     v
+Provision virtual machine
+     |
+     v
+Virtual machine receives resources
+     |
+     v
+Machine becomes reachable
+     |
+     v
+Deploy test application
+     |
+     v
+Read status / metrics
+     |
+     v
+Stop / restart
+     |
+     v
+Delete machine
+```
 
-A Windows or macOS laptop can still be used through its available virtualization layer, but nested virtualization and network behavior may add complexity.
-
-## What the lab should prove
-
-1. Create a virtual machine from an image.
-2. Assign virtual CPU and memory.
-3. Attach persistent storage.
-4. Connect the machine to a private virtual network.
-5. Optionally expose a public or forwarded port.
-6. Discover the resource from the control plane.
-7. Start, stop, restart, resize, and delete the machine.
-8. Collect CPU, memory, disk, and network metrics.
-9. Record resource lifecycle events.
-10. Demonstrate that a failure becomes visible to the control plane.
-
-## Why the laptop is not production cloud infrastructure
-
-A laptop usually has:
-
-- one physical host
-- limited power resilience
-- limited cooling
-- consumer-grade storage
-- changing Internet connectivity
-- possible carrier-grade network address translation
-- no redundant network path
-- no physical security controls
-- no hardware replacement process
-
-Therefore the laptop is the development laboratory, not the production availability layer.
-
-## First laboratory safety rule
-
-Do not expose the experimental management interface directly to the public Internet. Keep the control plane on a private network until authentication, firewalling, logging, patching, and remote-access controls have been intentionally designed.
+If we can automate that lifecycle, the experiment has succeeded.
 
 ## First experiment
 
-The simplest complete experiment is:
+### Step 1
 
-Laptop -> Hypervisor -> Linux virtual machine -> SSH access -> simple web server
+Install a suitable local virtualization layer.
 
-Then add a second virtual machine and make the control plane create and destroy the first machine.
+### Step 2
 
-That second step is where the project changes from ordinary virtualization into the beginning of a cloud platform.
+Create one small Linux virtual machine.
+
+### Step 3
+
+Install OpenSSH (Open Secure Shell) and a tiny web server.
+
+### Step 4
+
+Create a very small local control service with operations such as:
+
+```text
+POST /servers
+GET /servers
+POST /servers/:id/start
+POST /servers/:id/stop
+POST /servers/:id/restart
+DELETE /servers/:id
+```
+
+### Step 5
+
+The control service calls the local virtualization layer to perform the requested action.
+
+### Step 6
+
+Persist the resource record so that restarting the control service does not lose the server's identity or state.
+
+## What is intentionally excluded
+
+Do not add these during the first experiment:
+
+- multiple physical nodes
+- high availability
+- Kubernetes
+- distributed storage
+- public customer access
+- automated billing
+- multi-region networking
+- object storage
+- managed databases
+- autoscaling
+- advanced monitoring
+
+Those belong to later phases.
+
+## Safety
+
+Keep the management interface on the local machine or a private local network. Do not expose the experimental control plane to the public Internet.
+
+## Graduation condition
+
+We graduate from the laptop lab when the following works reliably:
+
+> A simple API can create, inspect, start, stop, restart, and delete a real virtual machine without manual intervention.
+
+At that point, buying a small dedicated server becomes worthwhile because we will already know what the hardware is supposed to run.
