@@ -12,19 +12,29 @@ The immediate goal is not to compete with Amazon Web Services, Microsoft Azure, 
 
 We will begin with a laptop as the physical host for a private cloud laboratory. The laptop will run virtual machines and cloud-management software so we can learn and prove the complete workflow before buying or colocating dedicated servers.
 
-The first useful milestone is:
+The first proof-of-concept milestone is intentionally tiny:
 
-> A user can create a virtual machine, receive a network address, connect to it securely, deploy an application, see basic resource usage, and have the platform record the resource and its cost.
+> Our own control plane can create or register one real virtual machine, read its real state, start/stop/restart it, persist its resource record, and delete it.
 
 The laptop is therefore the **first infrastructure host for the lab**, not the intended production data center.
 
 ## Initial direction
 
 - Phase 0: laptop-based cloud laboratory
-- Phase 1: small dedicated server cluster in a professional data center
-- Phase 2: production compute, storage, networking, monitoring, and billing
+- Phase 1: small dedicated server or mini-server node
+- Phase 2: multi-node compute, storage, networking, monitoring, and billing
 - Phase 3: managed databases, object storage, containers, and developer deployment
 - Phase 4: multi-region African infrastructure
+
+## Runnable Phase 0 lab
+
+The first implementation lives under `lab/`:
+
+- `lab/host-check.sh` - checks CPU, memory, storage, virtualization flags, and installed virtualization tooling
+- `lab/control-plane.py` - minimal local HTTP control plane backed by real libvirt and a SQLite resource registry
+- `lab/README.md` - installation, runbook, API examples, safety rules, and acceptance criteria
+
+The current implementation is intentionally standard-library-only on the control-plane side. It uses `virsh`, `virt-install`, `qemu-img`, libvirt, and SQLite rather than pretending to provision infrastructure through a mock interface.
 
 ## Documentation map
 
@@ -46,4 +56,4 @@ We will not pretend that a feature works when it is only a user-interface mock. 
 
 ## Repository status
 
-Current state: documentation foundation created. No production infrastructure is implied by the existence of this repository.
+Current state: **Phase 0 implementation started.** The repository contains the architecture/documentation foundation and the first runnable local control-plane scaffold. No production infrastructure is implied by the existence of this repository.
